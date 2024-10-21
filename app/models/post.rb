@@ -253,7 +253,7 @@ class Post < ApplicationRecord
       return true if is_video?
       return false if is_gif?
       return false if is_flash?
-      return false if has_tag?("animated_gif", "animated_png")
+      #return false if has_tag?("animated_gif", "animated_png")
       is_image? && image_width.present? && image_width > Danbooru.config.large_image_width
     end
 

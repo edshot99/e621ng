@@ -8,6 +8,8 @@ module DanbooruImageResizer
   # https://www.libvips.org/API/current/VipsForeignSave.html#vips-jpegsave
   JPEG_OPTIONS = { strip: true, interlace: true, optimize_coding: true }.freeze
   CROP_OPTIONS = { linear: false, no_rotate: true, export_profile: "srgb", import_profile: "srgb", crop: :attention }.freeze
+  # https://www.libvips.org/API/current/VipsForeignSave.html#vips-jxlsave
+  JPEGXL_OPTIONS = { lossless: false }.freeze
 
   def resize(file, width, height, resize_quality = 90, background_color: "000000")
     r = background_color[0..1].to_i(16)
@@ -16,6 +18,14 @@ module DanbooruImageResizer
     output_file = Tempfile.new
     resized_image = thumbnail(file, width, height, THUMBNAIL_OPTIONS)
     resized_image.jpegsave(output_file.path, Q: resize_quality, background: [r, g, b], **JPEG_OPTIONS)
+
+    output_file
+  end
+
+  def resize_jxl(file, width, height, distance = 1.0, effort = 7)
+    output_file = Tempfile.new
+    resized_image = thumbnail(file, width, height, THUMBNAIL_OPTIONS)
+    resized_image.jxlsave(output_file.path, distance: distance, effort: effort, **JPEGXL_OPTIONS)
 
     output_file
   end
@@ -29,6 +39,16 @@ module DanbooruImageResizer
     output_file = Tempfile.new
     resized_image = thumbnail(file, width, height, CROP_OPTIONS)
     resized_image.jpegsave(output_file.path, Q: resize_quality, background: [r, g, b], **JPEG_OPTIONS)
+
+    output_file
+  end
+
+  def crop_jxl(file, width, height, distance = 1.0, effort = 7)
+    return nil unless Danbooru.config.enable_image_cropping?
+
+    output_file = Tempfile.new
+    resized_image = thumbnail(file, width, height, CROP_OPTIONS)
+    resized_image.jxlsave(output_file.path, distance: distance, effort: effort, **JPEGXL_OPTIONS)
 
     output_file
   end

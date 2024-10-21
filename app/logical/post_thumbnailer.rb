@@ -7,12 +7,12 @@ module PostThumbnailer
       video = FFMPEG::Movie.new(file.path)
       crop_file = generate_video_crop_for(video, Danbooru.config.small_image_width)
       preview_file = generate_video_preview_for(file.path, Danbooru.config.small_image_width)
-      sample_file = generate_video_sample_for(file.path)
+      sample_file = generate_video_sample_for(file.path, height)
     elsif type == :image
-      preview_file = DanbooruImageResizer.resize(file, Danbooru.config.small_image_width, Danbooru.config.small_image_width, 87, background_color: background_color)
-      crop_file = DanbooruImageResizer.crop(file, Danbooru.config.small_image_width, Danbooru.config.small_image_width, 87, background_color: background_color)
+      preview_file = DanbooruImageResizer.resize_jxl(file, Danbooru.config.small_image_width, Danbooru.config.small_image_width, 1.0, 9)
+      crop_file = DanbooruImageResizer.crop_jxl(file, Danbooru.config.small_image_width, Danbooru.config.small_image_width, 1.0, 9)
       if width > Danbooru.config.large_image_width
-        sample_file = DanbooruImageResizer.resize(file, Danbooru.config.large_image_width, height, 87, background_color: background_color)
+        sample_file = DanbooruImageResizer.resize_jxl(file, Danbooru.config.large_image_width, height, 1.0, 9)
       end
     end
 
@@ -23,7 +23,7 @@ module PostThumbnailer
     if type == :video
       preview_file = generate_video_preview_for(file.path, Danbooru.config.small_image_width)
     elsif type == :image
-      preview_file = DanbooruImageResizer.resize(file, Danbooru.config.small_image_width, Danbooru.config.small_image_width, 87)
+      preview_file = DanbooruImageResizer.resize_jxl(file, Danbooru.config.small_image_width, Danbooru.config.small_image_width, 1.0, 9)
     end
 
     preview_file
@@ -32,7 +32,7 @@ module PostThumbnailer
   def generate_video_crop_for(video, width)
     vp = Tempfile.new(["video-preview", ".jpg"], binmode: true)
     video.screenshot(vp.path, {:seek_time => 0, :resolution => "#{video.width}x#{video.height}"})
-    crop = DanbooruImageResizer.crop(vp, width, width, 87)
+    crop = DanbooruImageResizer.crop_jxl(vp, width, width, 1.0, 9)
     vp.close
     return crop
   end
@@ -46,10 +46,11 @@ module PostThumbnailer
       Rails.logger.warn("[FFMPEG PREVIEW STDERR] #{stderr.chomp!}")
       raise CorruptFileError.new("could not generate thumbnail")
     end
-    output_file
+    preview_file = DanbooruImageResizer.resize_jxl(output_file, Danbooru.config.small_image_width, Danbooru.config.small_image_width, 1.0, 9)
+    preview_file
   end
 
-  def generate_video_sample_for(video)
+  def generate_video_sample_for(video, height)
     output_file = Tempfile.new(["video-sample", ".jpg"], binmode: true)
     stdout, stderr, status = Open3.capture3(Danbooru.config.ffmpeg_path, '-y', '-i', video, '-vf', 'thumbnail', '-frames:v', '1', output_file.path)
 
@@ -58,6 +59,7 @@ module PostThumbnailer
       Rails.logger.warn("[FFMPEG SAMPLE STDERR] #{stderr.chomp!}")
       raise CorruptFileError.new("could not generate sample")
     end
-    output_file
+    sample_file = DanbooruImageResizer.resize_jxl(output_file, Danbooru.config.large_image_width, height, 1.0, 9)
+    sample_file
   end
 end

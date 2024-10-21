@@ -1,3 +1,15 @@
+## JPEG XL PostThumbnailer
+
+Experimental code that generates JPEG XL crops, previews, and samples instead of JPEG ones.
+Kept for future reference.
+
+### Notes
+
+* APNG's will be non-animated JXL's because libvips and libspng is lacking APNG support
+* JXL's will be non-animated unless libvips v8.16.0 is used
+This can be worked around by doing something like:
+$ cjxl XX/XX/md5.png sample/XX/XX/md5.jxl
+
 <div align="center">
   <img src="public/images/github-logo.svg" width="150" height="150" align="left">
   <div align="left">
